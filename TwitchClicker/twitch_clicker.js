@@ -136,7 +136,8 @@ const clicker = {
     document.body.appendChild(clickerBody);
   },
   tryToClick: function () {
-    const buttons = document.getElementsByClassName("iVIehm");
+    // TODO: Implement a better way to find the button.
+    const buttons = document.getElementsByClassName("kIlsPe");
     if (buttons.length === 0) {
       const diff = Math.floor((new Date().getTime() - new Date(this.lastClicked)) / 1000)
       this.timeSinceLastClick = diff;
