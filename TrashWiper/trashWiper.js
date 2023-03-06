@@ -4,7 +4,6 @@ const wiper = {
   captchaID: "",
   threadInfo: {},
   elements: {},
-  latestWipe: null,
   timeLeft: 0,
   init: function () {
     // CSS
@@ -52,21 +51,21 @@ const wiper = {
           gap: 10px;
         }
         .wiperButton {
-          border: 2px solid transparent;
+          border: 1px solid transparent;
           color: black;
-          background-color: aquamarine;
+          background-color: #46a136;
           width: 5rem;
           height: 1.5rem;
           transition: border 0.25s ease-out
         }
         .wiperButton:hover {
           cursor: pointer;
-          border: 2px solid blue;
+          border: 1px solid white;
           transition: border 0.25s ease-in
         }
         .wiperButtonInactive {
           background-color: gray;
-          border: 2px solid transparent;
+          border: 1px solid transparent;
         }
         .wiperButtonInactive:hover {
           cursor: not-allowed;
@@ -121,16 +120,20 @@ const wiper = {
         </div>
         <div class="wiperJustify">
           <button class="wiperButton wiperButtonSingle">single</button>
-          <button class="wiperButton wiperButtonAll">all</button>
+          <button class="wiperButton wiperButtonAll" name="autoSend">all</button>
         </div>
       </div>
       <div class="wiperCaptchaDiv">
         <img class="wiperCaptchaImg">
         <div class="wiperCaptchaControlsDiv">
-            <input class="wiperCaptchaInput wiperTextInput" type="number" minlength="6" maxlength="6" placeholder="captcha">
-            <button class="wiperButton wiperButtonSend wiperButtonInactive">send</button>
+            <input class="wiperCaptchaInput wiperTextInput" type="number" placeholder="captcha">
+            <div class="wiperJustify">
+              <button class="wiperButton wiperButtonSend wiperButtonInactive">send</button>
+              <input class="wiperAutoCheckbox" type="checkbox">
+              <label for="autoSend">auto send</label>
+            </div>
             <span class="wiperInfoSpan">info</span>
-            <span class="wiperCountdownSpan">99</span>
+            <span class="wiperCountdownSpan"></span>
         </div>
       </div>
     `;
@@ -140,6 +143,7 @@ const wiper = {
 
     // Add functionality to buttons
     {
+      // Button Single
       wiper.elements.singleButton =
         document.querySelector(".wiperButtonSingle");
       wiper.elements.singleButton.addEventListener("click", (e) => {
@@ -178,22 +182,20 @@ const wiper = {
         wiper.randomWipe();
       });
 
+      // Button All
       wiper.elements.allButton = document.querySelector(".wiperButtonAll");
       wiper.elements.allButton.addEventListener("click", (e) => {
         console.log("all");
       });
 
+      // Button Send
       wiper.elements.sendButton = document.querySelector(".wiperButtonSend");
+      wiper.elements.sendButton.disabled = true;
       wiper.elements.sendButton.addEventListener("click", (e) => {
-        if (
-          wiper.elements.sendButton.classList.contains("wiperButtonInactive")
-        ) {
-          console.log("captcha not loaded");
-          return;
-        }
         wiper.sendCaptcha(wiper.generateCommentRandom());
       });
 
+      // Textbox Thread Selector
       wiper.elements.selectedThread = document.querySelector(
         ".wiperThreadSelector"
       );
@@ -208,6 +210,7 @@ const wiper = {
         );
       };
 
+      // Textbox Board Selector
       wiper.elements.selectedBoard = document.querySelector(
         ".wiperBoardSelector"
       );
@@ -222,9 +225,25 @@ const wiper = {
         );
       };
 
+      // Textbox Captcha
+      wiper.elements.captchaInput =
+        document.querySelector(".wiperCaptchaInput");
+      wiper.elements.captchaInput.addEventListener("keypress", (e) => {
+        if (e.target.value.length >= 6) {
+          e.preventDefault();
+        }
+        if (e.keyCode === 13 && e.target.value.length >= 6) {
+          wiper.elements.sendButton.click();
+        }
+      });
       wiper.elements.captchaImg = document.querySelector(".wiperCaptchaImg");
+      wiper.elements.captchaImg.addEventListener("click", (e) => {
+        e.target.src = e.target.src
+      });
       wiper.elements.infoSpan = document.querySelector(".wiperInfoSpan");
-      wiper.elements.countdownSpan = document.querySelector(".wiperCountdownSpan");
+      wiper.elements.countdownSpan = document.querySelector(
+        ".wiperCountdownSpan"
+      );
 
       // Load last thread number from storage
       const wiperStorage = localStorage.getItem("wiperStorage");
@@ -235,11 +254,17 @@ const wiper = {
       wiper.elements.selectedBoard.value = storageJSON.selectedBoard;
       wiper.selectedThread = storageJSON.selectedThread;
       wiper.selectedBoard = storageJSON.selectedBoard;
-    }
-  },
 
-  updateNumbers: function () {
-    // placeholder
+      // Countdown
+      setInterval(() => {
+        if (wiper.timeLeft <= 0) {
+          wiper.elements.countdownSpan.innerText = "";
+          return;
+        }
+        wiper.timeLeft -= 1;
+        wiper.elements.countdownSpan.innerText = wiper.timeLeft;
+      }, 1000);
+    }
   },
 
   randomWipe: async function () {
@@ -253,7 +278,6 @@ const wiper = {
   },
 
   generateCommentRandom: function () {
-    // const messages = this.threadInfo.threads[0].posts;
     const messages = this.threadInfo.threads[0].posts.reduce((acc, current) => {
       acc.push(current.num);
       return acc;
@@ -291,13 +315,6 @@ const wiper = {
           msg += "\n";
         }
       });
-
-      // for (let i = 0; i < 28; i++) {
-      //   msg += `>>${messages[Math.floor(Math.random() * messages.length)]}`;
-      //   if (i < 27) {
-      //     msg += "\n";
-      //   }
-      // }
       return msg;
     }
   },
@@ -332,19 +349,27 @@ const wiper = {
       this.elements.captchaImg.src = `https://2ch.hk/api/captcha/2chcaptcha/show?id=${res.id}`;
       this.elements.infoSpan.innerText = "input captcha";
       this.elements.sendButton.classList.remove("wiperButtonInactive");
+      this.elements.captchaInput.value = "";
+      this.elements.sendButton.disabled = false;
     } catch (error) {
       this.elements.infoSpan.innerText = "could not load captcha";
     }
   },
 
   sendCaptcha: async function (message) {
-    if (this.latestWipe !== null && Date.now() - this.latestWipe <= 20 * 1000) {
-      console.log("wait more");
+    if (this.timeLeft > 0) {
       this.elements.infoSpan.innerText = "20 seconds haven't passed yet";
       return;
     }
 
-    const captcha = document.querySelector(".wiperCaptchaInput");
+    this.elements.singleButton.classList.add("wiperButtonInactive");
+    this.elements.allButton.classList.add("wiperButtonInactive");
+    this.elements.sendButton.classList.add("wiperButtonInactive");
+    this.elements.sendButton.disabled = true;
+    this.elements.singleButton.disabled = true;
+    this.elements.allButton.disabled = true;
+
+    const captcha = this.elements.captchaInput;
 
     const formData = new FormData();
     formData.append("task", "post");
@@ -372,6 +397,13 @@ const wiper = {
       ).json();
       if (res.result === 0 && res.error.code === -5) {
         this.elements.infoSpan.innerText = "wrong captcha";
+        this.elements.sendButton.classList.remove("wiperButtonInactive");
+        this.elements.sendButton.disabled = false;
+
+        this.elements.singleButton.classList.remove("wiperButtonInactive");
+        this.elements.allButton.classList.remove("wiperButtonInactive");
+        this.elements.singleButton.disabled = false;
+        this.elements.allButton.disabled = false;
         return;
       }
       if (res.result === 0 && res.error.code === -8) {
@@ -383,9 +415,14 @@ const wiper = {
         this.elements.captchaImg.src = "";
         this.elements.infoSpan.innerText = "sent";
         this.elements.sendButton.classList.add("wiperButtonInactive");
-        this.latestWipe = Date.now();
+        this.elements.sendButton.disabled = true;
+        this.timeLeft = 20;
         captcha.value = "";
       }
+      this.elements.singleButton.classList.remove("wiperButtonInactive");
+      this.elements.allButton.classList.remove("wiperButtonInactive");
+      this.elements.singleButton.disabled = false;
+      this.elements.allButton.disabled = false;
     } catch (error) {
       this.elements.infoSpan.innerText = "error while sending";
       console.log(error);
