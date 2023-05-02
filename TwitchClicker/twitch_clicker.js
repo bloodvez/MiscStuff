@@ -137,13 +137,8 @@ const clicker = {
   },
   tryToClick: function () {
     // TODO: Implement a better way to find the button.
-    const buttons = document.getElementsByClassName("kIlsPe");
-    if (buttons.length === 0) {
-      const diff = Math.floor((new Date().getTime() - new Date(this.lastClicked)) / 1000)
-      this.timeSinceLastClick = diff;
-      return;
-    }
-    const button = buttons[0];
+    const button = document.querySelector(".claimable-bonus__icon");
+    if (button === null) return;
     button.click();
     this.hasClicked += 1;
     this.lastClicked = new Date().getTime()
