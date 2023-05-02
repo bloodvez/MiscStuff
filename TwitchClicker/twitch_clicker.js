@@ -105,7 +105,7 @@ const clicker = {
     const hideMenu = () => {
       this.rowsContainer.classList.toggle("hidden");
       this.hidden = !this.hidden;
-      this.updateNumbers()
+      this.updateNumbers();
     };
 
     const row1 = document.createElement("div");
@@ -132,16 +132,22 @@ const clicker = {
     clickerBody.appendChild(this.hideMenuButton);
     this.rowsContainer.appendChild(row1);
     this.rowsContainer.appendChild(row2);
-    this.updateNumbers()
+    this.updateNumbers();
     document.body.appendChild(clickerBody);
   },
   tryToClick: function () {
     // TODO: Implement a better way to find the button.
     const button = document.querySelector(".claimable-bonus__icon");
-    if (button === null) return;
+    if (button === null) {
+      const diff = Math.floor(
+        (new Date().getTime() - new Date(this.lastClicked)) / 1000
+      );
+      this.timeSinceLastClick = diff;
+      return;
+    }
     button.click();
     this.hasClicked += 1;
-    this.lastClicked = new Date().getTime()
+    this.lastClicked = new Date().getTime();
     this.timeSinceLastClick = 0;
     return;
   },
@@ -149,10 +155,10 @@ const clicker = {
     this.c1.textContent = `Clicked: ${this.hasClicked}`;
     this.c2.textContent = `Clicked ${this.timeSinceLastClick} s. ago`;
     if (!this.hidden) {
-        this.hideMenuButton.innerText = "X";
-      } else {
-        this.hideMenuButton.innerText = this.hasClicked;
-      }
+      this.hideMenuButton.innerText = "X";
+    } else {
+      this.hideMenuButton.innerText = this.hasClicked;
+    }
   },
   toggleClicking: function (interval = 5) {
     this.rowsContainer.classList.toggle("active");
@@ -174,4 +180,4 @@ const clicker = {
     );
     this.toggleButton.innerText = "Stop";
   },
-}.init()
+}.init();
